@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import org.bitcoins.config.NetworkParameters
-import org.bitcoins.util.{BitcoinSUtil, Factory}
+import org.bitcoins.util.{Base58, BitcoinSUtil, Factory}
 import org.spongycastle.crypto.AsymmetricCipherKeyPair
 import org.spongycastle.crypto.generators.ECKeyPairGenerator
 import org.spongycastle.crypto.params.{ECKeyGenerationParameters, ECPrivateKeyParameters}
@@ -123,10 +123,9 @@ trait ECFactory extends Factory[BaseECKey] {
    * @param base58
    * @return
    */
-  def fromBase58ToPrivateKey(base58 : String, network : NetworkParameters) : ECPrivateKey = {
-    ???
-/*    val bytes = BitcoinSUtil.decodeBase58(base58)
-    privateKey(bytes)*/
+  def fromBase58ToPrivateKey(base58 : String) : ECPrivateKey = {
+    val decodedBase58 = Base58.decode(base58)
+    ECFactory.privateKey(decodedBase58)
   }
 
 }

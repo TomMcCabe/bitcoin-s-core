@@ -165,11 +165,11 @@ trait P2SHScriptSignature extends ScriptSignature {
  * OP_0 <A sig> [B sig] [C sig...]
  */
 trait MultiSignatureScriptSignature extends ScriptSignature {
+
   /**
-   * The digital signatures inside of the scriptSig
-    *
+    * The digital signatures inside of the scriptSig
     * @return
-   */
+    */
   def signatures : Seq[ECDigitalSignature] = {
     asm.tail.filter(_.isInstanceOf[ScriptConstant])
       .map(sig => ECFactory.digitalSignature(sig.hex))
