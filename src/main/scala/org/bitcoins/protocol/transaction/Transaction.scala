@@ -9,13 +9,49 @@ import org.bitcoins.util.{Factory, BitcoinSUtil, CryptoUtil}
 
 
 sealed trait Transaction extends TransactionElement {
+  /**
+    * The sha256(sha256(tx)) of this transaction
+    * @return
+    */
   def txId : String = BitcoinSUtil.encodeHex(CryptoUtil.doubleSHA256(hex).reverse)
+
+  /**
+    * The version number for this transaction
+    * @return
+    */
   def version : Long
+
+  /**
+    * The inputs for this transaction
+    * @return
+    */
   def inputs  : Seq[TransactionInput]
+
+  /**
+    * The outputs for this transaction
+    * @return
+    */
   def outputs : Seq[TransactionOutput]
+
+  /**
+    * The locktime for this transaction
+    * @return
+    */
   def lockTime : Long
 
   override def hex = RawTransactionParser.write(this)
+
+  /**
+    * Determines if this transaction is a coinbase transaction
+    * @return
+    */
+  def isCoinbase : Boolean = inputs.size match {
+    case 1 => inputs.head match {
+      case coinbase : CoinbaseInput => true
+      case _ : TransactionInput => false
+    }
+    case _ : Int => false
+  }
 }
 
 case object EmptyTransaction extends Transaction {
@@ -25,13 +61,14 @@ case object EmptyTransaction extends Transaction {
   override def outputs = Seq()
   override def lockTime = TransactionConstants.lockTime
 }
-sealed case class TransactionImpl(version : Long, inputs : Seq[TransactionInput],
-  outputs : Seq[TransactionOutput], lockTime : Long) extends Transaction
+
 
 object Transaction extends Factory[Transaction] {
+
+  private sealed case class TransactionImpl(version : Long, inputs : Seq[TransactionInput],
+    outputs : Seq[TransactionOutput], lockTime : Long) extends Transaction
   /**
     * Updates a transaction outputs
- *
     * @param updatedOutputs
     * @return
     */
@@ -41,7 +78,6 @@ object Transaction extends Factory[Transaction] {
 
   /**
     * Updates a transaction's inputs
- *
     * @param updatedInputs
     * @return
     */
@@ -51,7 +87,6 @@ object Transaction extends Factory[Transaction] {
 
   /**
     * Factory function that modifies a transactions locktime
- *
     * @param oldTx
     * @param lockTime
     * @return
@@ -63,14 +98,12 @@ object Transaction extends Factory[Transaction] {
 
   /**
     * Removes the inputs of the transactions
- *
     * @return
     */
   def emptyInputs(oldTx : Transaction) : Transaction = TransactionImpl(oldTx.version,Seq(),oldTx.outputs,oldTx.lockTime)
 
   /**
     * Removes the outputs of the transactions
- *
     * @return
     */
   def emptyOutputs(oldTx : Transaction) : Transaction = TransactionImpl(oldTx.version,oldTx.inputs,Seq(),oldTx.lockTime)
@@ -86,4 +119,8 @@ object Transaction extends Factory[Transaction] {
   def apply(oldTx : Transaction, updatedInputs : UpdateTransactionInputs) : Transaction = factory(oldTx, updatedInputs)
   def apply(oldTx : Transaction, updatedOutputs : UpdateTransactionOutputs) : Transaction = factory(oldTx, updatedOutputs)
 
+  def apply(version : Int, inputs : Seq[TransactionInput],
+            outputs : Seq[TransactionOutput], lockTime : Long) : Transaction = {
+    TransactionImpl(version,inputs,outputs,lockTime)
+  }
 }

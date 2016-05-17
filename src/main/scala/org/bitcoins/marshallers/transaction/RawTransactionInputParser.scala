@@ -4,7 +4,7 @@ import org.bitcoins.marshallers.RawBitcoinSerializer
 import org.bitcoins.marshallers.script.RawScriptSignatureParser
 import org.bitcoins.protocol.{CompactSizeUInt}
 import org.bitcoins.protocol.script.ScriptSignature
-import org.bitcoins.protocol.transaction.{TransactionInputImpl, TransactionOutPoint, TransactionInput}
+import org.bitcoins.protocol.transaction.{TransactionOutPoint, TransactionInput}
 import org.bitcoins.util.{BitcoinSUtil}
 import org.slf4j.LoggerFactory
 
@@ -45,10 +45,11 @@ trait RawTransactionInputParser extends RawBitcoinSerializer[Seq[TransactionInpu
         val endOfScriptSigBytes = outPointBytesSize + scriptSigCompactSizeUInt.num.toInt + scriptCompactSizeUIntSize
         val lastInputByte = endOfScriptSigBytes + sequenceBytesSize
         val sequenceBytes = bytes.slice(endOfScriptSigBytes,lastInputByte)
-        logger.debug("Sequence bytes: " + BitcoinSUtil.encodeHex(sequenceBytes))
         val sequenceNumberHex : String = BitcoinSUtil.encodeHex(sequenceBytes)
-        val sequenceNumber : Long = java.lang.Long.parseLong(sequenceNumberHex,16)
-        val txInput = TransactionInputImpl(outPoint,scriptSig,sequenceNumber)
+        val sequenceNumberFlippedEndianess = BitcoinSUtil.flipEndianess(sequenceNumberHex)
+        val sequenceNumber : Long = java.lang.Long.parseLong(sequenceNumberFlippedEndianess,16)
+        logger.debug("Parsed sequence number: " + sequenceNumber)
+        val txInput = TransactionInput(outPoint,scriptSig,sequenceNumber)
 
         val newAccum =  txInput :: accum
         val bytesToBeParsed = bytes.slice(lastInputByte, bytes.size)
@@ -75,7 +76,6 @@ trait RawTransactionInputParser extends RawBitcoinSerializer[Seq[TransactionInpu
 
   /**
    * Writes a single transaction input
- *
    * @param input
    * @return
    */
@@ -87,7 +87,7 @@ trait RawTransactionInputParser extends RawBitcoinSerializer[Seq[TransactionInpu
     val paddingNeeded = 8 - sequenceWithoutPadding.size
     val padding = for { i <- 0 until paddingNeeded} yield "0"
 
-    val sequence = sequenceWithoutPadding + padding.mkString
+    val sequence = BitcoinSUtil.flipEndianess(sequenceWithoutPadding + padding.mkString).reverse
     outPoint + varInt + scriptSig + sequence
   }
 }

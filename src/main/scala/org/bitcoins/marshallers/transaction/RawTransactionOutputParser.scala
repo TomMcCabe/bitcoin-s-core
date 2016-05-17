@@ -25,7 +25,7 @@ trait RawTransactionOutputParser extends RawBitcoinSerializer[Seq[TransactionOut
         //then call that function multiple times to get a Seq[TransactionOutput]
         val satoshisHex = BitcoinSUtil.encodeHex(bytes.take(8).reverse)
         logger.debug("Satoshi hex: " + satoshisHex)
-        val satoshis = Satoshis(java.lang.Long.parseLong(satoshisHex, 16))
+        val satoshis = parseSatoshis(satoshisHex)
         //it doesn't include itself towards the size, thats why it is incremented by one
         val firstScriptPubKeyByte = 8
         val scriptCompactSizeUIntSize : Int = BitcoinSUtil.parseCompactSizeUIntSize(bytes(firstScriptPubKeyByte)).toInt
@@ -59,7 +59,6 @@ trait RawTransactionOutputParser extends RawBitcoinSerializer[Seq[TransactionOut
 
   /**
    * Writes a single transaction output
- *
    * @param output
    * @return
    */
@@ -68,7 +67,22 @@ trait RawTransactionOutputParser extends RawBitcoinSerializer[Seq[TransactionOut
     val compactSizeUIntHex = output.scriptPubKeyCompactSizeUInt.hex
     val satoshisHexWithoutPadding : String = BitcoinSUtil.encodeHex(satoshis)
     val satoshisHex = addPadding(16,satoshisHexWithoutPadding)
-    satoshisHex + compactSizeUIntHex + output.scriptPubKey.hex
+    logger.debug("compactSizeUIntHex: " + compactSizeUIntHex)
+    logger.debug("satoshis: " + satoshisHex)
+    if (compactSizeUIntHex == "00") satoshisHex + compactSizeUIntHex
+    else satoshisHex + compactSizeUIntHex + output.scriptPubKey.hex
+  }
+
+  /**
+    * Parses the amount of satoshis a hex string represetns
+    * @param hex the hex string that is being parsed to satoshis
+    * @return the value of the hex string in satoshis
+    */
+  private def parseSatoshis(hex : String) : Satoshis = {
+    if (hex == "ffffffffffffffff") {
+      //this represents a negative satoshis
+      CurrencyUnits.negativeSatoshi
+    } else Satoshis(java.lang.Long.parseLong(hex, 16))
   }
 }
 

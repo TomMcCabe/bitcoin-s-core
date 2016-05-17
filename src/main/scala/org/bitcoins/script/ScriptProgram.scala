@@ -55,24 +55,21 @@ sealed trait ScriptProgram {
    * Flags that are run with the script
    * these flags indicate special conditions that a script needs to be run with
    * see: https://github.com/bitcoin/bitcoin/blob/master/src/script/interpreter.h#L31
-    *
-    * @return
+   * @return
    */
   def flags : Seq[ScriptFlag]
 
   /**
-
-   * Returns if the stack top is true
-    *
+    * Returns true if the stack top is true
     * @return
-   */
+    */
   def stackTopIsTrue = !stackTopIsFalse
 
+
   /**
-   * Returns if the stack top is false
-    *
+    * Returns true if the stack top is false
     * @return
-   */
+    */
   def stackTopIsFalse : Boolean = {
     if (stack.headOption.isDefined &&
       (stack.head.hex == OP_FALSE.hex || stack.head.hex == ScriptNumber.negativeZero.hex ||
@@ -92,10 +89,9 @@ sealed trait PreExecutionScriptProgram extends ScriptProgram
 sealed trait ExecutionInProgressScriptProgram extends ScriptProgram {
   /**
    * The index of the last OP_CODESEPARATOR
- *
    * @return
    */
-  def lastCodeSeparator : Int
+  def lastCodeSeparator : Option[Int]
 
 }
 
@@ -140,7 +136,7 @@ object ScriptProgram {
    */
   private sealed case class ExecutionInProgressScriptProgramImpl(txSignatureComponent : TransactionSignatureComponent,
     stack : List[ScriptToken],script : List[ScriptToken], originalScript : List[ScriptToken], altStack : List[ScriptToken],
-    flags : Seq[ScriptFlag], lastCodeSeparator : Int = 0) extends ExecutionInProgressScriptProgram
+    flags : Seq[ScriptFlag], lastCodeSeparator : Option[Int]) extends ExecutionInProgressScriptProgram
 
   /**
    * The implementation type for a script program that is finished being executed by the script interpreter
@@ -168,7 +164,6 @@ object ScriptProgram {
 
   /**
    * Sets an error on the script program
- *
    * @param oldProgram the program who has hit an invalid state
    * @param error the error that thet program hit while being executed in the script interpreter
    * @return the ExecutedScriptProgram with the given error set inside of the trait
@@ -187,7 +182,6 @@ object ScriptProgram {
 
   /**
     * Updates the program script verify flags
- *
     * @param oldProgram
     * @param flags
     * @return
@@ -206,7 +200,6 @@ object ScriptProgram {
 
   /**
     * Changes the tokens in either the Stack or the Script depending in the indicator
- *
     * @param oldProgram
     * @param tokens
     * @param indicator
@@ -234,7 +227,7 @@ object ScriptProgram {
               program.altStack,program.flags)
           case program : ExecutionInProgressScriptProgram =>
             ExecutionInProgressScriptProgramImpl(program.txSignatureComponent, program.stack, tokens.toList, program.originalScript,
-              program.altStack, program.flags)
+              program.altStack, program.flags,program.lastCodeSeparator)
           case program : ExecutedScriptProgram =>
             throw new RuntimeException("Cannot update the script for a program that has been fully executed")
         }
@@ -244,7 +237,7 @@ object ScriptProgram {
             tokens.toList,program.flags)
         case program : ExecutionInProgressScriptProgram =>
           ExecutionInProgressScriptProgramImpl(program.txSignatureComponent, program.stack, program.script, program.originalScript,
-            tokens.toList, program.flags)
+            tokens.toList, program.flags, program.lastCodeSeparator)
         case program : ExecutedScriptProgram =>
           throw new RuntimeException("Cannot update the alt stack for a program that has been fully executed")
       }
@@ -255,7 +248,7 @@ object ScriptProgram {
             program.altStack,program.flags)
         case program : ExecutionInProgressScriptProgram =>
           ExecutionInProgressScriptProgramImpl(program.txSignatureComponent, program.stack, program.script, tokens.toList,
-            program.altStack, program.flags)
+            program.altStack, program.flags, program.lastCodeSeparator)
         case program : ExecutedScriptProgram =>
           throw new RuntimeException("Cannot update the alt stack for a program that has been fully executed")
       }
@@ -265,7 +258,6 @@ object ScriptProgram {
 
   /**
     * Changes the stack tokens and script tokens in a ScriptProgram
- *
     * @param oldProgram
     * @param stackTokens
     * @param scriptTokens
@@ -280,7 +272,6 @@ object ScriptProgram {
 
   /**
     * Updates the last OP_CODESEPARATOR index
- *
     * @param oldProgram
     * @param lastCodeSeparator
     * @return
@@ -288,12 +279,11 @@ object ScriptProgram {
   def factory(oldProgram : ExecutionInProgressScriptProgram, lastCodeSeparator : Int) : ExecutionInProgressScriptProgram = {
     ExecutionInProgressScriptProgramImpl(oldProgram.txSignatureComponent,
       oldProgram.stack, oldProgram.script, oldProgram.originalScript,
-      oldProgram.altStack, oldProgram.flags,lastCodeSeparator)
+      oldProgram.altStack, oldProgram.flags,Some(lastCodeSeparator))
   }
 
   /**
     * Updates the tokens in either the stack or script and the last OP_CODESEPARATOR index
- *
     * @param oldProgram
     * @param tokens
     * @param indicator
@@ -313,7 +303,6 @@ object ScriptProgram {
 
   /**
     * Updates the stack, script, alt stack of the given oldProgram
- *
     * @param oldProgram
     * @param stack
     * @param script
@@ -331,7 +320,6 @@ object ScriptProgram {
     * Creates a new script program that can be used to verify if a transaction at the given inputIndex
     * spends a given scriptPubKey correctly. Assumes that the script to be executed is the
     * scriptSignature at the given input index
-    *
     * @param transaction the transaction that is being checked
     * @param scriptPubKey the scriptPubKey for which the input is spending
     * @param inputIndex the input's index inside of transaction which we are spending
@@ -366,7 +354,6 @@ object ScriptProgram {
     * The intention for this factory function is to allow us to create a program that already has a stack state. This
     * is useful for after execution of a scriptSig, copying the stack into this program with the scriptPubKey read to
     * run inside the script variable
- *
     * @param transaction the transaction being checked
     * @param scriptPubKey the scriptPubKey which the input is spending
     * @param inputIndex the input's index inside of the transaction we are spending
@@ -385,7 +372,6 @@ object ScriptProgram {
     * The intention for this factory function is to allow us to create a program that already has a stack state. This
     * is useful for after execution of a scriptSig, copying the stack into this program with the scriptPubKey read to
     * run inside the script variable
-    *
     * @param txSignatureComponent the relevant transaction information for execution of a script program
     * @param stack the current stack state of the program
     * @param script the script that we need to execute
@@ -459,10 +445,10 @@ object ScriptProgram {
   def toExecutionInProgress(preExecutionScriptProgram: PreExecutionScriptProgram, stack : Option[List[ScriptToken]]) : ExecutionInProgressScriptProgram = {
     stack match {
       case Some(stackTokens) => ExecutionInProgressScriptProgramImpl(preExecutionScriptProgram.txSignatureComponent,stackTokens,preExecutionScriptProgram.script,
-    preExecutionScriptProgram.originalScript,preExecutionScriptProgram.altStack,preExecutionScriptProgram.flags, 0)
+    preExecutionScriptProgram.originalScript,preExecutionScriptProgram.altStack,preExecutionScriptProgram.flags, None)
       case None =>
         ExecutionInProgressScriptProgramImpl(preExecutionScriptProgram.txSignatureComponent,preExecutionScriptProgram.stack,preExecutionScriptProgram.script,
-          preExecutionScriptProgram.originalScript,preExecutionScriptProgram.altStack,preExecutionScriptProgram.flags, 0)
+          preExecutionScriptProgram.originalScript,preExecutionScriptProgram.altStack,preExecutionScriptProgram.flags, None)
     }
   }
 
