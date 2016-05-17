@@ -54,7 +54,7 @@ trait CryptoUtil {
    * @param bytes
    * @return
    */
-  def sha256(bytes : Seq[Byte]) : Seq[Byte] = MessageDigest.getInstance("SHA-2").digest(bytes.toArray).toList
+  def sha256(bytes : Seq[Byte]) : Seq[Byte] = MessageDigest.getInstance("SHA-256").digest(bytes.toArray).toList
 
 
   /**
