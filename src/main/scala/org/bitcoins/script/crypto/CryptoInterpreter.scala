@@ -19,13 +19,12 @@ trait CryptoInterpreter extends ControlOperationsInterpreter with BitcoinSLogger
 
   /**
    * The input is hashed twice: first with SHA-256 and then with RIPEMD-160.
- *
    * @param program
    * @return
    */
   def opHash160(program : ScriptProgram) : ScriptProgram = {
     require(program.script.headOption.isDefined && program.script.head == OP_HASH160, "Script operation must be OP_HASH160")
-    executeHashFunction(program, CryptoUtil.sha256Hash160(_ : List[Byte]))
+    executeHashFunction(program, CryptoUtil.sha256Hash160(_ : Seq[Byte]))
   }
 
 
@@ -36,7 +35,7 @@ trait CryptoInterpreter extends ControlOperationsInterpreter with BitcoinSLogger
    */
   def opRipeMd160(program : ScriptProgram) : ScriptProgram = {
     require(program.script.headOption.isDefined && program.script.head == OP_RIPEMD160, "Script operation must be OP_RIPEMD160")
-    executeHashFunction(program, CryptoUtil.ripeMd160(_ : List[Byte]))
+    executeHashFunction(program, CryptoUtil.ripeMd160(_ : Seq[Byte]))
   }
 
   /**
@@ -46,7 +45,7 @@ trait CryptoInterpreter extends ControlOperationsInterpreter with BitcoinSLogger
    */
   def opSha256(program : ScriptProgram) : ScriptProgram = {
     require(program.script.headOption.isDefined && program.script.head == OP_SHA256, "Script operation must be OP_SHA256")
-    executeHashFunction(program, CryptoUtil.sha256(_ : List[Byte]))
+    executeHashFunction(program, CryptoUtil.sha256(_ : Seq[Byte]))
   }
 
   /**
@@ -56,7 +55,7 @@ trait CryptoInterpreter extends ControlOperationsInterpreter with BitcoinSLogger
    */
   def opHash256(program : ScriptProgram) : ScriptProgram = {
     require(program.script.headOption.isDefined && program.script.head == OP_HASH256, "Script operation must be OP_HASH256")
-    executeHashFunction(program, CryptoUtil.doubleSHA256(_ : List[Byte]))
+    executeHashFunction(program, CryptoUtil.doubleSHA256(_ : Seq[Byte]))
   }
 
   /**
@@ -66,7 +65,7 @@ trait CryptoInterpreter extends ControlOperationsInterpreter with BitcoinSLogger
    */
   def opSha1(program : ScriptProgram) : ScriptProgram = {
     require(program.script.headOption.isDefined && program.script.head == OP_SHA1, "Script top must be OP_SHA1")
-    executeHashFunction(program, CryptoUtil.sha1(_ : List[Byte]))
+    executeHashFunction(program, CryptoUtil.sha1(_ : Seq[Byte]))
   }
 
   /**
@@ -306,7 +305,7 @@ trait CryptoInterpreter extends ControlOperationsInterpreter with BitcoinSLogger
    * @param hashFunction the hash function which needs to be used on the stack top (sha256,ripemd160,etc..)
    * @return
    */
-  private def executeHashFunction(program : ScriptProgram, hashFunction : List[Byte] => List[Byte]) : ScriptProgram = {
+  private def executeHashFunction(program : ScriptProgram, hashFunction : Seq[Byte] => Seq[Byte]) : ScriptProgram = {
     if (program.stack.headOption.isDefined) {
       val stackTop = program.stack.head
       val hash = ScriptConstant(hashFunction(stackTop.bytes))

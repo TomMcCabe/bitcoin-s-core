@@ -1,8 +1,13 @@
 package org.bitcoins.crypto
 
-import org.bitcoinj.core.DumpedPrivateKey
+import java.math.BigInteger
+import java.security.SecureRandom
+
 import org.bitcoins.config.NetworkParameters
-import org.bitcoins.util.{Factory, BitcoinSUtil}
+import org.bitcoins.util.{BitcoinSUtil, Factory}
+import org.spongycastle.crypto.AsymmetricCipherKeyPair
+import org.spongycastle.crypto.generators.ECKeyPairGenerator
+import org.spongycastle.crypto.params.{ECKeyGenerationParameters, ECPrivateKeyParameters}
 
 /**
  * Created by chris on 2/16/16.
@@ -11,7 +16,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Creates a private key from a hex string
- *
    * @param hex
    * @return
    */
@@ -19,7 +23,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Creates a private key from a sequence of bytes
- *
    * @param bytes
    * @return
    */
@@ -27,17 +30,21 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Generates a fresh ECPrivateKey
- *
    * @return
    */
   def privateKey : ECPrivateKey = {
-    val bitcoinjKey = new org.bitcoinj.core.ECKey
-    privateKey(bitcoinjKey.getPrivKeyBytes)
+    val secureRandom = new SecureRandom
+    val generator : ECKeyPairGenerator = new ECKeyPairGenerator
+    val keyGenParams : ECKeyGenerationParameters = new ECKeyGenerationParameters(CryptoParams.curve, secureRandom)
+    generator.init(keyGenParams)
+    val keypair : AsymmetricCipherKeyPair = generator.generateKeyPair
+    val privParams: ECPrivateKeyParameters = keypair.getPrivate.asInstanceOf[ECPrivateKeyParameters]
+    val priv : BigInteger = privParams.getD
+    privateKey(priv.toByteArray)
   }
 
   /**
    * Creates a public key from a hex string
- *
    * @param hex
    * @return
    */
@@ -48,7 +55,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Creates a public key from a sequence of bytes
- *
    * @param bytes
    * @return
    */
@@ -56,7 +62,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Generates a fresh public key
- *
    * @return
    */
   def publicKey = privateKey.publicKey
@@ -64,7 +69,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Creates a digital signature from the given hex string
- *
    * @param hex
    * @return
    */
@@ -72,7 +76,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Creates a digital signature from the given sequence of bytes
- *
    * @param bytes
    * @return
    */
@@ -83,10 +86,19 @@ trait ECFactory extends Factory[BaseECKey] {
     else ECDigitalSignatureImpl(bytes)
   }
 
+  /**
+    * Takes in the r and s component of a digital signature and gives back a ECDigital signature object
+    * @param r the r component of the digital signature
+    * @param s the s component of the digital signature
+    * @return
+    */
+  def digitalSignature(r : BigInteger, s : BigInteger) : ECDigitalSignature = {
+    ???
+  }
+
 
   /**
    * Creates a private key from a hex string
- *
    * @param hex
    * @return
    */
@@ -94,7 +106,6 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Creates a private key from a byte array
- *
    * @param bytes
    * @return
    */
@@ -103,14 +114,13 @@ trait ECFactory extends Factory[BaseECKey] {
 
   /**
    * Takes in a base58 string and converts it into a private key
- *
    * @param base58
    * @return
    */
   def fromBase58ToPrivateKey(base58 : String, network : NetworkParameters) : ECPrivateKey = {
-    val bitcoinJDumpedPrivKey = new DumpedPrivateKey(network.network,base58)
-
-    privateKey(bitcoinJDumpedPrivKey.getKey.getPrivKeyBytes)
+    ???
+/*    val bytes = BitcoinSUtil.decodeBase58(base58)
+    privateKey(bytes)*/
   }
 
 }
