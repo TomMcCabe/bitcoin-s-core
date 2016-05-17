@@ -1,5 +1,7 @@
 package org.bitcoins.crypto
 
+import java.math.BigInteger
+
 import org.bitcoins.util.{BitcoinSLogger, BitcoinSUtil}
 
 /**
