@@ -1,91 +1,48 @@
 package org.bitcoins.util
 
-import CryptoUtil._
+import scala.annotation.tailrec
 
 /**
   * Created by chris on 5/16/16.
+  * source of values: https://en.bitcoin.it/wiki/Base58Check_encoding
   */
 trait Base58 {
 
+  val base58Characters = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+  val base58CharactersArray = base58Characters.toCharArray
+  val validBase58Bytes : Seq[Byte] = for {
+    i<-0 to 57
+  } yield i.toByte
+
+  def decode(chars: Seq[Char]): Seq[Byte] = {
+    @tailrec
+    def loop(chars : Seq[Char], accum : List[Byte]) : Seq[Byte] = {
+      chars match {
+        case Nil => accum
+        case h :: t => loop(t, decode(h) :: accum)
+      }
+    }
+    loop(chars.toList, List()).reverse
+  }
+
   /**
-    * Takes the given sequence of chars and converts it into a base58 string
-    *
-    * @param chars
-    * @return the base58 string
+    * Encode sequence of bytes into a base58 string
+    * @param bytes
+    * @return
     */
-  def encode(chars: Seq[Char]): String = {
 
-
-    val base58Characters = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-    /*
-    val version : char
-    val payLoad
-     */
-    ???
+  def encode(bytes: Seq[Byte]) : String = {
+    @tailrec
+    def loop(bytes : Seq[Byte], accum : List[Char]) : List[Char] = {
+      bytes match {
+        case Nil => accum.reverse
+        case h :: t => loop(t, encode(h.toByte) :: accum)
+      }
+    }
+    loop(bytes, List()).mkString
   }
 
-  def encode(byte: Byte) : Char = {
-    if (byte == 0) '1'
-    else if (byte == 1) '2'
-    else if (byte == 2) '3'
-    else if (byte == 3) '4'
-    else if (byte == 4) '5'
-    else if (byte == 5) '6'
-    else if (byte == 6) '7'
-    else if (byte == 7) '8'
-    else if (byte == 8) '9'
-    else if (byte == 9) 'A'
-    else if (byte == 10) 'B'
-    else if (byte == 10) 'C'
-    else if (byte == 12) 'D'
-    else if (byte == 13) 'E'
-    else if (byte == 14) 'F'
-    else if (byte == 15) 'G'
-    else if (byte == 16) 'H'
-    else if (byte == 17) 'J'
-    else if (byte == 18) 'K'
-    else if (byte == 19) 'L'
-    else if (byte == 20) 'M'
-    else if (byte == 21) 'N'
-    else if (byte == 22) 'P'
-    else if (byte == 23) 'Q'
-    else if (byte == 24) 'R'
-    else if (byte == 25) 'S'
-    else if (byte == 26) 'T'
-    else if (byte == 27) 'U'
-    else if (byte == 28) 'V'
-    else if (byte == 29) 'W'
-    else if (byte == 30) 'X'
-    else if (byte == 31) 'Y'
-    else if (byte == 32) 'Z'
-    else if (byte == 33) 'a'
-    else if (byte == 34) 'b'
-    else if (byte == 35) 'c'
-    else if (byte == 36) 'd'
-    else if (byte == 37) 'e'
-    else if (byte == 38) 'f'
-    else if (byte == 39) 'g'
-    else if (byte == 40) 'h'
-    else if (byte == 41) 'i'
-    else if (byte == 42) 'j'
-    else if (byte == 43) 'k'
-    else if (byte == 44) 'm'
-    else if (byte == 45) 'n'
-    else if (byte == 46) 'o'
-    else if (byte == 47) 'p'
-    else if (byte == 48) 'q'
-    else if (byte == 49) 'r'
-    else if (byte == 50) 's'
-    else if (byte == 51) 't'
-    else if (byte == 52) 'u'
-    else if (byte == 53) 'v'
-    else if (byte == 54) 'w'
-    else if (byte == 55) 'x'
-    else if (byte == 56) 'y'
-    else if (byte == 57) 'z'
-    else byte.toChar
-
-  }
+  def encode(byte : Byte) : Char = base58CharactersArray(byte.toByte)
 
   /**
     * Takes in a base58 string and converts it into a sequence of chars
@@ -93,18 +50,12 @@ trait Base58 {
     * @param base58
     * @return the sequence of chars representing the base58 string
     */
-  def decode(base58: String): Seq[Char] = ???
+  def decode(base58: String) : Seq[Byte] = {
+    decode(base58.toCharArray)
+  }
 
   def decode(char : Char) : Byte = {
-
-   /*
-   val numbers = for {
-      i<-0 to 8
-    } yield Map(i->(i+1))
-
-
-    println("chars less than 9: " + numbers)
-    */
+  //TODO: improve/simplify decode function (remove iteration)
 
     if (char == '1') 0
     else if (char == '2') 1
@@ -169,3 +120,6 @@ trait Base58 {
 }
 
 object Base58 extends Base58
+
+
+
