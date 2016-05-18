@@ -63,8 +63,8 @@ trait ScriptParser extends Factory[List[ScriptToken]] with BitcoinSLogger {
 
     @tailrec
     def loop(operations : List[String], accum : List[Byte]) : List[Byte] = {
-      logger.debug("Attempting to parse: " + operations.headOption)
-      logger.debug("Accum: " + accum)
+/*      logger.debug("Attempting to parse: " + operations.headOption)
+      logger.debug("Accum: " + accum)*/
       operations match {
         //for parsing strings like 'Az', need to remove single quotes
         //example: https://github.com/bitcoin/bitcoin/blob/master/src/test/data/script_valid.json#L24
@@ -90,7 +90,7 @@ trait ScriptParser extends Factory[List[ScriptToken]] with BitcoinSLogger {
               case false => List(BytesToPushOntoStack(bytes.size))
             }
 
-            loop(t, bytes.toList ++  bytesToPushOntoStack.flatMap(_.bytes) ++  accum)
+            loop(t, bytes.toList ++ bytesToPushOntoStack.flatMap(_.bytes) ++  accum)
           }
         //if we see a byte constant in the form of "0x09adb"
         case h :: t if (h.size > 1 && h.substring(0,2) == "0x") =>

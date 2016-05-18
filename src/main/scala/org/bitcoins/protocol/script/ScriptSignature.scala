@@ -1,12 +1,11 @@
 package org.bitcoins.protocol.script
 
-import org.bitcoins.crypto.{EmptyDigitalSignature, ECPublicKey, ECFactory, ECDigitalSignature}
-import org.bitcoins.marshallers.script.{RawScriptSignatureParser, RawScriptPubKeyParser, ScriptParser}
+import org.bitcoins.crypto.{ECDigitalSignature, ECFactory, ECPublicKey, EmptyDigitalSignature}
+import org.bitcoins.marshallers.script.{RawScriptPubKeyParser, RawScriptSignatureParser, ScriptParser}
 import org.bitcoins.marshallers.transaction.TransactionElement
-
 import org.bitcoins.script.constant._
-import org.bitcoins.script.crypto.{SIGHASH_ALL, OP_CHECKMULTISIG, HashType, HashTypeFactory}
-import org.bitcoins.util.{Factory, BitcoinScriptUtil, BitcoinSLogger, BitcoinSUtil}
+import org.bitcoins.script.crypto.{HashType, HashTypeFactory, OP_CHECKMULTISIG, SIGHASH_ALL}
+import org.bitcoins.util.{BitcoinSLogger, BitcoinSUtil, BitcoinScriptUtil, Factory}
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
@@ -21,8 +20,7 @@ sealed trait ScriptSignature extends TransactionElement with BitcoinSLogger {
    * Representation of a scriptSignature in a parsed assembly format
    * this data structure can be run through the script interpreter to
    * see if a script evaluates to true
-    *
-    * @return
+   * @return
    */
   def asm : Seq[ScriptToken]
 
@@ -32,8 +30,7 @@ sealed trait ScriptSignature extends TransactionElement with BitcoinSLogger {
    * p2pk script signatures only have one sigs
    * p2sh script signatures can have m sigs
    * multisignature scripts can have m sigs
-    *
-    * @return
+   * @return
    */
   def signatures : Seq[ECDigitalSignature]
 
@@ -168,11 +165,11 @@ trait P2SHScriptSignature extends ScriptSignature {
  * OP_0 <A sig> [B sig] [C sig...]
  */
 trait MultiSignatureScriptSignature extends ScriptSignature {
+
   /**
-   * The digital signatures inside of the scriptSig
-    *
+    * The digital signatures inside of the scriptSig
     * @return
-   */
+    */
   def signatures : Seq[ECDigitalSignature] = {
     asm.tail.filter(_.isInstanceOf[ScriptConstant])
       .map(sig => ECFactory.digitalSignature(sig.hex))
@@ -207,25 +204,6 @@ trait P2PKScriptSignature extends ScriptSignature {
   }
 }
 
-object P2PKHScriptSignatureImpl {
-  def apply(hex : String) : P2PKHScriptSignatureImpl = P2PKHScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
-}
-case class P2PKHScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends P2PKHScriptSignature
-
-object P2SHScriptSignatureImpl {
-  def apply(hex : String) : P2SHScriptSignatureImpl = P2SHScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
-}
-case class P2SHScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends P2SHScriptSignature
-
-object MultiSignatureScriptSignatureImpl {
-  def apply(hex : String) : MultiSignatureScriptSignatureImpl = MultiSignatureScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
-}
-case class MultiSignatureScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends MultiSignatureScriptSignature
-
-object P2PKScriptSignatureImpl {
-  def apply(hex : String) : P2PKScriptSignatureImpl = P2PKScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
-}
-case class P2PKScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends P2PKScriptSignature
 
 /**
  * Represents the empty script signature
@@ -237,7 +215,28 @@ case object EmptyScriptSignature extends ScriptSignature {
 }
 
 object ScriptSignature extends Factory[ScriptSignature] with BitcoinSLogger {
-    /**
+
+  private object P2PKHScriptSignatureImpl {
+    def apply(hex : String) : P2PKHScriptSignatureImpl = P2PKHScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
+  }
+  private case class P2PKHScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends P2PKHScriptSignature
+
+  private object P2SHScriptSignatureImpl {
+    def apply(hex : String) : P2SHScriptSignatureImpl = P2SHScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
+  }
+  private case class P2SHScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends P2SHScriptSignature
+
+  private object MultiSignatureScriptSignatureImpl {
+    def apply(hex : String) : MultiSignatureScriptSignatureImpl = MultiSignatureScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
+  }
+  private case class MultiSignatureScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends MultiSignatureScriptSignature
+
+  private object P2PKScriptSignatureImpl {
+    def apply(hex : String) : P2PKScriptSignatureImpl = P2PKScriptSignatureImpl(hex, RawScriptSignatureParser.read(hex).asm)
+  }
+  private case class P2PKScriptSignatureImpl(hex : String, asm : Seq[ScriptToken]) extends P2PKScriptSignature
+
+  /**
       * Builds a script signature from a digital signature and a public key
       * this is a pay to public key hash script sig
       *
