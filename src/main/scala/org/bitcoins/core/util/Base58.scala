@@ -1,0 +1,73 @@
+package org.bitcoins.core.util
+
+import scala.annotation.tailrec
+
+/**
+  * Created by chris on 5/16/16.
+  * source of values: https://en.bitcoin.it/wiki/Base58Check_encoding
+  */
+trait Base58 {
+
+  val base58Characters = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+  val base58Pairs = base58Characters.zipWithIndex.toMap
+
+  /*
+    def decodeCheck(base58: String) : Seq[Byte] = {
+    val decoded : Seq[Byte] = decode(base58)
+    if (decoded.length < 4) throw new RuntimeException("input too short")
+    val splitData : (Seq[Byte], Seq[Byte])  = decoded.splitAt(decoded.length - 4)
+    val data : Seq[Byte] = splitData._1
+    val checkSum : Seq[Byte] = splitData._2
+    val actualCheckSum : Seq[Byte] = CryptoUtil.doubleSHA256(decoded.slice(0,4))
+    if (checkSum != actualCheckSum) throw new RuntimeException("checksum does not validate")
+    data
+  }
+   */
+  /**
+    * Takes in sequence of bytes and returns base58 bitcoin address
+    * Used ACINQ's implementation as reference under Apache License
+    * Modified to use Scala's BigInt rather than Java's BigInteger
+    * https://github.com/ACINQ/bitcoin-lib/blob/master/src/main/scala/fr/acinq/bitcoin/Base58.scala
+    * @param bytes
+    * @return
+    */
+  def encodeBase58(bytes : Seq[Byte]) : String = {
+    if (bytes.isEmpty) ""
+    else {
+      val big : BigInt = BigInt(bytes.toArray)
+      val builder = new StringBuilder
+
+      @tailrec
+      def loop(current : BigInt) : String = current match {
+        case a if current == BigInt(0) => ""
+        case _ =>
+          val quotient : BigInt = current / BigInt(58L)
+          val remainder  = current.mod(58L)
+          builder.append(base58Characters.charAt(remainder.intValue())) //
+          loop(quotient)
+      }
+      loop(big)
+      bytes.takeWhile(_ == 0).map(_ => builder.append(base58Characters.charAt(0)))
+      builder.toString().reverse
+    }
+  }
+
+  /**
+    * Takes in base58 string and returns sequence of bytes
+    * https://github.com/ACINQ/bitcoin-lib/blob/master/src/main/scala/fr/acinq/bitcoin/Base58.scala
+    * @param input
+    * @return
+    */
+  def decodeBase58(input: String) : Seq[Byte] = {
+    val zeroes = input.takeWhile(_ == '1').map(_ => 0:Byte).toArray
+    val trim  = input.dropWhile(_ == '1').toList
+    val decoded = trim.foldLeft(BigInt(0))((a,b) =>a.*(BigInt(58L)).+(BigInt(base58Pairs(b))))
+    if (trim.isEmpty) zeroes else zeroes ++ decoded.toByteArray.dropWhile(_ == 0).toList.toSeq // BigInteger.toByteArray may add a leading 0x00
+  }
+
+}
+
+object Base58 extends Base58
+
+
+
