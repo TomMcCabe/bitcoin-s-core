@@ -3,19 +3,25 @@ package org.bitcoins.core.crypto
 
 import org.bitcoins.core.config.TestNet3
 import org.bitcoins.core.protocol.script.EmptyScriptSignature
-import org.bitcoins.core.util.{BitcoinSUtil, BitcoinJTestUtil, CryptoTestUtil, TestUtil}
+import org.bitcoins.core.util._
 import org.scalatest.{MustMatchers, FlatSpec}
 
 /**
  * Created by chris on 3/7/16.
  */
-class ECFactoryTest extends FlatSpec with MustMatchers {
+class ECFactoryTest extends FlatSpec with MustMatchers with BitcoinSLogger {
 
   "ECFactory" must "create a private key from the dumped base58 in bitcoin-cli" in {
     val privateKeyBase58 = CryptoTestUtil.privateKeyBase58
     val bitcoinjDumpedPrivateKey = new org.bitcoinj.core.DumpedPrivateKey(BitcoinJTestUtil.params,privateKeyBase58)
     val bitcoinjPrivateKey = bitcoinjDumpedPrivateKey.getKey
     val privateKey = ECFactory.fromBase58ToPrivateKey(privateKeyBase58)
+
+    logger.debug("bitcoinj dumped key: " + bitcoinjDumpedPrivateKey)
+    logger.debug("bitcoinj priv key: " + bitcoinjPrivateKey)
+    logger.debug("our key: " + privateKey)
+    logger.debug("bitcoinj priv key as HEX: " + bitcoinjPrivateKey.getPrivateKeyAsHex)
+    logger.debug("our key as hex: " + privateKey.hex)
 
     privateKey.hex must be (bitcoinjPrivateKey.getPrivateKeyAsHex)
 

@@ -1,33 +1,44 @@
 package org.bitcoins.core.util
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success}
 
 /**
   * Created by chris on 5/16/16.
   * source of values: https://en.bitcoin.it/wiki/Base58Check_encoding
   */
-trait Base58 {
+trait Base58 extends BitcoinSLogger {
 
   val base58Characters = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
   val base58Pairs = base58Characters.zipWithIndex.toMap
 
-  /*
-    def decodeCheck(base58: String) : Seq[Byte] = {
-    val decoded : Seq[Byte] = decode(base58)
-    if (decoded.length < 4) throw new RuntimeException("input too short")
-    val splitData : (Seq[Byte], Seq[Byte])  = decoded.splitAt(decoded.length - 4)
-    val data : Seq[Byte] = splitData._1
-    val checkSum : Seq[Byte] = splitData._2
-    val actualCheckSum : Seq[Byte] = CryptoUtil.doubleSHA256(decoded.slice(0,4))
-    if (checkSum != actualCheckSum) throw new RuntimeException("checksum does not validate")
-    data
+
+  def decodeCheck(input: String) : Seq[Byte] = {
+    val decoded : Seq[Byte] = decodeBase58(input)
+    if (decoded.length < 4) throw new RuntimeException("Invalid input")
+    else {
+      val splitSeqs = decoded.splitAt(decoded.length - 4)
+      val data : Seq[Byte] = splitSeqs._1
+      val checksum : Seq[Byte] = splitSeqs._2
+      val actualChecksum : Seq[Byte] = CryptoUtil.doubleSHA256(data).slice(0, 4)
+//      logger.debug("input: " + input)
+//      logger.debug("data: " + data)
+//      logger.debug("checksum : " + checksum)
+//      logger.debug("actualCheckSum: " + actualChecksum)
+//      logger.debug("-----------------------------------")
+      if (checksum == actualChecksum)
+      data
+      else throw new IllegalArgumentException("checksums don't validate")
+    }
   }
-   */
+
+
   /**
     * Takes in sequence of bytes and returns base58 bitcoin address
     * Used ACINQ's implementation as reference under Apache License
     * Modified to use Scala's BigInt rather than Java's BigInteger
     * https://github.com/ACINQ/bitcoin-lib/blob/master/src/main/scala/fr/acinq/bitcoin/Base58.scala
+    *
     * @param bytes
     * @return
     */
@@ -55,6 +66,7 @@ trait Base58 {
   /**
     * Takes in base58 string and returns sequence of bytes
     * https://github.com/ACINQ/bitcoin-lib/blob/master/src/main/scala/fr/acinq/bitcoin/Base58.scala
+    *
     * @param input
     * @return
     */
