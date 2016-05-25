@@ -20,7 +20,7 @@ sealed trait ECPrivateKey extends BaseECKey {
     new ECPrivateKeyParameters(new BigInteger(bytes.toArray), CryptoParams.curve)
 
   /**
-   * Derives the public for a the private key
+   * Derives the public key for a the private key
    * @return
    */
   def publicKey : ECPublicKey = {

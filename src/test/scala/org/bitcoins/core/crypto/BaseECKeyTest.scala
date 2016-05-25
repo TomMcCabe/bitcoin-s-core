@@ -7,7 +7,8 @@ import org.scalatest.{FlatSpec, MustMatchers}
 /**
  * Created by chris on 2/29/16.
  */
-class BaseECKeyTest extends FlatSpec with MustMatchers with BitcoinSLogger {
+
+class BaseECKeyTest extends FlatSpec with MustMatchers {
 
   "BaseECKey" must "sign a arbitrary piece of data" in {
     //follows this bitcoinj test case
@@ -16,16 +17,10 @@ class BaseECKeyTest extends FlatSpec with MustMatchers with BitcoinSLogger {
     val key : BaseECKey = ECFactory.fromHex(privateKeyHex)
     val signature : ECDigitalSignature = key.sign(Sha256Hash.ZERO_HASH.getBytes.toSeq)
 
-    logger.debug("privKeyHex: " + privateKeyHex)
-    logger.debug("key: " + key)
-    logger.debug("sig: " + signature)
-
     val bitcoinjKey = org.bitcoinj.core.ECKey.fromPrivate(BitcoinSUtil.decodeHex(privateKeyHex).toArray)
     val bitcoinjSignature : ECDSASignature = bitcoinjKey.sign(Sha256Hash.ZERO_HASH)
     signature.hex must be (BitcoinSUtil.encodeHex(bitcoinjSignature.encodeToDER()))
 
-    logger.debug("bitcoinJ Key: " + bitcoinjKey)
-    logger.debug("bitcoinJ sig: " + bitcoinjSignature)
 
   }
 
@@ -41,4 +36,5 @@ class BaseECKeyTest extends FlatSpec with MustMatchers with BitcoinSLogger {
     val signature = key1.sign("180cb41c7c600be951b5d3d0a7334acc7506173875834f7a6c4c786a28fcbb19",key2)
     key2.publicKey.verify("180cb41c7c600be951b5d3d0a7334acc7506173875834f7a6c4c786a28fcbb19", signature) must be (true)
   }
+
 }
