@@ -40,7 +40,7 @@ trait Base58 extends BitcoinSLogger {
   def encodeBase58(bytes : Seq[Byte]) : String = {
     if (bytes.isEmpty) ""
     else {
-      val big : BigInt = BigInt(bytes.toArray)
+      val big : BigInt = BigInt(1, bytes.toArray)
       val builder = new StringBuilder
 
       @tailrec

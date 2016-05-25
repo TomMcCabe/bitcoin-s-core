@@ -1,5 +1,7 @@
 package org.bitcoins.core.util
 
+import org.bitcoins.core.crypto.ECFactory
+import org.bitcoins.core.protocol.BitcoinAddress
 import org.scalatest.{FlatSpec, MustMatchers}
 
 /**
@@ -27,5 +29,22 @@ class Base58Test extends FlatSpec with MustMatchers {
     val bitcoinj = org.bitcoinj.core.Base58.decode(address)
     Base58.decodeBase58(address) must be (bitcoinj)
   }
+
+  it must "decode address into bytes, then encode bytes back to address the same as bitcoinj" in {
+    //1C4kYhyLftmkn48YarSoLupxHfYFo8kp64
+    val address = TestUtil.bitcoinAddress.value
+    val bitcoinj = org.bitcoinj.core.Base58.encode(org.bitcoinj.core.Base58.decode(address))
+    Base58.encodeBase58(Base58.decodeBase58(address)) must be (bitcoinj)
+    Base58.encodeBase58(Base58.decodeBase58(address)) must be ("1C4kYhyLftmkn48YarSoLupxHfYFo8kp64")
+  }
+
+  it must "decode asset address into bytes then encode back to asset address" in {
+    //akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA
+    val asset = TestUtil.assetAddress.value
+    val bitcoinj = org.bitcoinj.core.Base58.encode(org.bitcoinj.core.Base58.decode(asset))
+    Base58.encodeBase58(Base58.decodeBase58(asset)) must be ("akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA")
+    Base58.encodeBase58(Base58.decodeBase58(asset)) must be (bitcoinj)
+  }
+
 
 }
