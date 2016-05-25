@@ -17,11 +17,11 @@ class ECFactoryTest extends FlatSpec with MustMatchers with BitcoinSLogger {
     val bitcoinjPrivateKey = bitcoinjDumpedPrivateKey.getKey
     val privateKey = ECFactory.fromBase58ToPrivateKey(privateKeyBase58)
 
-    logger.debug("bitcoinj dumped key: " + bitcoinjDumpedPrivateKey)
-    logger.debug("bitcoinj priv key: " + bitcoinjPrivateKey)
-    logger.debug("our key: " + privateKey)
-    logger.debug("bitcoinj priv key as HEX: " + bitcoinjPrivateKey.getPrivateKeyAsHex)
-    logger.debug("our key as hex: " + privateKey.hex)
+//    logger.debug("bitcoinj dumped key: " + bitcoinjDumpedPrivateKey)
+//    logger.debug("bitcoinj priv key: " + bitcoinjPrivateKey)
+//    logger.debug("our key: " + privateKey)
+//    logger.debug("bitcoinj priv key as HEX: " + bitcoinjPrivateKey.getPrivateKeyAsHex)
+//    logger.debug("our key as hex: " + privateKey.hex)
 
     privateKey.hex must be (bitcoinjPrivateKey.getPrivateKeyAsHex)
 
