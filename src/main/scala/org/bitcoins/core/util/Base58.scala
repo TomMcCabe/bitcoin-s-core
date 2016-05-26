@@ -14,7 +14,7 @@ trait Base58 extends BitcoinSLogger {
 
 
   def decodeCheck(input: String) : Seq[Byte] = {
-    val decoded : Seq[Byte] = decodeBase58(input)
+    val decoded : Seq[Byte] = decode(input)
     if (decoded.length < 4) throw new RuntimeException("Invalid input")
     else {
       val splitSeqs = decoded.splitAt(decoded.length - 4)
@@ -37,7 +37,7 @@ trait Base58 extends BitcoinSLogger {
     * @param bytes
     * @return
     */
-  def encodeBase58(bytes : Seq[Byte]) : String = {
+  def encode(bytes : Seq[Byte]) : String = {
     if (bytes.isEmpty) ""
     else {
       val big : BigInt = BigInt(1, bytes.toArray)
@@ -65,7 +65,7 @@ trait Base58 extends BitcoinSLogger {
     * @param input
     * @return
     */
-  def decodeBase58(input: String) : Seq[Byte] = {
+  def decode(input: String) : Seq[Byte] = {
     val zeroes = input.takeWhile(_ == '1').map(_ => 0:Byte).toArray
     val trim  = input.dropWhile(_ == '1').toList
     val decoded = trim.foldLeft(BigInt(0))((a,b) =>a.*(BigInt(58L)).+(BigInt(base58Pairs(b))))

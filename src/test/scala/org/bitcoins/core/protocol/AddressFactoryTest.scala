@@ -13,12 +13,12 @@ class AddressFactoryTest extends FlatSpec with MustMatchers {
   }
 
   it must "create an address from a sequence of bytes"  in {
-    Address(Base58.decodeBase58(TestUtil.bitcoinAddress.value)) must be (TestUtil.bitcoinAddress)
+    Address(Base58.decode(TestUtil.bitcoinAddress.value)) must be (TestUtil.bitcoinAddress)
   }
 
 
   it must "create an asset address from a base58 encoded string" in {
-    Address(Base58.decodeBase58(TestUtil.assetAddress.value)) must be (TestUtil.assetAddress)
+    Address(Base58.decode(TestUtil.assetAddress.value)) must be (TestUtil.assetAddress)
   }
 
   it must "throw an exception if the given string" in {

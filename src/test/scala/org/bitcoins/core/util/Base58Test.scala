@@ -27,23 +27,23 @@ class Base58Test extends FlatSpec with MustMatchers {
   it must "decode and return same result as bitcoinj" in {
     val address = "1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i"
     val bitcoinj = org.bitcoinj.core.Base58.decode(address)
-    Base58.decodeBase58(address) must be (bitcoinj)
+    Base58.decode(address) must be (bitcoinj)
   }
 
   it must "decode address into bytes, then encode bytes back to address the same as bitcoinj" in {
     //1C4kYhyLftmkn48YarSoLupxHfYFo8kp64
     val address = TestUtil.bitcoinAddress.value
     val bitcoinj = org.bitcoinj.core.Base58.encode(org.bitcoinj.core.Base58.decode(address))
-    Base58.encodeBase58(Base58.decodeBase58(address)) must be (bitcoinj)
-    Base58.encodeBase58(Base58.decodeBase58(address)) must be ("1C4kYhyLftmkn48YarSoLupxHfYFo8kp64")
+    Base58.encode(Base58.decode(address)) must be (bitcoinj)
+    Base58.encode(Base58.decode(address)) must be ("1C4kYhyLftmkn48YarSoLupxHfYFo8kp64")
   }
 
   it must "decode asset address into bytes then encode back to asset address" in {
     //akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA
     val asset = TestUtil.assetAddress.value
     val bitcoinj = org.bitcoinj.core.Base58.encode(org.bitcoinj.core.Base58.decode(asset))
-    Base58.encodeBase58(Base58.decodeBase58(asset)) must be ("akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA")
-    Base58.encodeBase58(Base58.decodeBase58(asset)) must be (bitcoinj)
+    Base58.encode(Base58.decode(asset)) must be ("akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA")
+    Base58.encode(Base58.decode(asset)) must be (bitcoinj)
   }
 
 
