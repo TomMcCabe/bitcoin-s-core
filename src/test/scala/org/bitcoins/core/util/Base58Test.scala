@@ -2,6 +2,7 @@ package org.bitcoins.core.util
 
 import org.bitcoins.core.crypto.ECFactory
 import org.bitcoins.core.protocol.BitcoinAddress
+import org.bitcoins.core.util
 import org.scalatest.{FlatSpec, MustMatchers}
 
 /**
@@ -44,6 +45,13 @@ class Base58Test extends FlatSpec with MustMatchers {
     val bitcoinj = org.bitcoinj.core.Base58.encode(org.bitcoinj.core.Base58.decode(asset))
     Base58.encode(Base58.decode(asset)) must be ("akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA")
     Base58.encode(Base58.decode(asset)) must be (bitcoinj)
+  }
+
+  it must "decode multisig address into bytes then encode back to multisig" in {
+    val multi = TestUtil.multiSigAddress.value
+    val bitcoinj = org.bitcoinj.core.Base58.encode(org.bitcoinj.core.Base58.decode(multi))
+    Base58.encode(Base58.decode(multi)) must be (TestUtil.multiSigAddress.value)
+    Base58.encode(Base58.decode(multi)) must be (bitcoinj)
   }
 
 
