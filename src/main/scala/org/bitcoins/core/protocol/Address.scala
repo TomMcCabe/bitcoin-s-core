@@ -1,7 +1,7 @@
 package org.bitcoins.core.protocol
 
 import org.bitcoins.core.config.{RegTest, TestNet3, MainNet}
-import org.bitcoins.core.util.{CryptoUtil, Base58, BitcoinSUtil, Factory}
+import org.bitcoins.core.util.{CryptoUtil, Base58, Factory}
 import scala.util.{Failure, Success, Try}
 
 sealed abstract class Address(val value : String)
@@ -50,15 +50,15 @@ object BitcoinAddress {
    * @return
    */
   def p2shAddress(address : String) : Boolean = {
-    try {
-      val decodeCheckP2SH : Seq[Byte] = Base58.decodeCheck(address)
-      val firstByte = decodeCheckP2SH(0)
-      ((firstByte == MainNet.p2shNetworkByte || firstByte == TestNet3.p2shNetworkByte || RegTest.p2shNetworkByte == firstByte)
-        && decodeCheckP2SH.size == 21)
-    } catch {
-      case _ : Throwable => false
+    val decodeCheckP2SH : Try[Seq[Byte]] = Base58.decodeCheck(address)
+    decodeCheckP2SH match {
+      case Success(bytes) =>
+        val firstByte = bytes.head
+        ((firstByte == MainNet.p2shNetworkByte || firstByte == TestNet3.p2shNetworkByte ||
+          RegTest.p2shNetworkByte == firstByte)
+          && bytes.size == 21)
+      case Failure(exception) => false
     }
-
   }
 
   /**
@@ -76,16 +76,14 @@ object BitcoinAddress {
    * @return
    */
   def p2pkh(address : String) : Boolean = {
-    try {
-      val decodeCheckP2PPK : Seq[Byte] = Base58.decodeCheck(address)
-      val firstByte = decodeCheckP2PPK(0)
-
-      (firstByte == MainNet.p2pkhNetworkByte || firstByte == TestNet3.p2pkhNetworkByte ||
-        firstByte == RegTest.p2pkhNetworkByte) && decodeCheckP2PPK.size == 21
-    } catch {
-      case _ : Throwable =>  false
+    val decodeCheckP2PKH : Try[Seq[Byte]] = Base58.decodeCheck(address)
+    decodeCheckP2PKH match {
+      case Success(bytes) =>
+        val firstByte = bytes.head
+        (firstByte == MainNet.p2pkhNetworkByte || firstByte == TestNet3.p2pkhNetworkByte ||
+          firstByte == RegTest.p2pkhNetworkByte) && bytes.size == 21
+      case Failure(exception) => false
     }
-
   }
 
   /**
@@ -102,12 +100,9 @@ object AssetAddress {
     //asset addresses must have the one byte namespace equivalent to 19
     //which ends up being 'a' in the ascii character set.
     //bytes size becomes 22
-    val decodeCheckAssetAddress : Try[Seq[Byte]] = Try(Base58.decodeCheck(assetAddress))
+    val decodeCheckAssetAddress : Try[Seq[Byte]] = Base58.decodeCheck(assetAddress)
     decodeCheckAssetAddress match {
-      case Success(bytes) =>
-        if (bytes == null) false
-        else bytes.size == 22  &&
-          bytes.head == 0x13
+      case Success(bytes) => bytes.size == 22  && bytes.head == 0x13
       case Failure(_) => false
     }
   }

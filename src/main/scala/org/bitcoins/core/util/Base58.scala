@@ -1,7 +1,7 @@
 package org.bitcoins.core.util
 
 import scala.annotation.tailrec
-import scala.util.{Failure, Success}
+import scala.util.{Try, Failure, Success}
 
 /**
   * Created by chris on 5/16/16.
@@ -13,17 +13,18 @@ trait Base58 extends BitcoinSLogger {
   val base58Pairs = base58Characters.zipWithIndex.toMap
 
 
-  def decodeCheck(input: String) : Seq[Byte] = {
+  def decodeCheck(input: String) : Try[Seq[Byte]] = {
+
     val decoded : Seq[Byte] = decode(input)
-    if (decoded.length < 4) throw new RuntimeException("Invalid input")
+    if (decoded.length < 4) Failure(new IllegalArgumentException("Invalid input"))
     else {
       val splitSeqs = decoded.splitAt(decoded.length - 4)
       val data : Seq[Byte] = splitSeqs._1
       val checksum : Seq[Byte] = splitSeqs._2
       val actualChecksum : Seq[Byte] = CryptoUtil.doubleSHA256(data).slice(0, 4)
       if (checksum == actualChecksum)
-      data
-      else throw new IllegalArgumentException("checksums don't validate")
+      Success(data)
+      else Failure(new IllegalArgumentException("checksums don't validate"))
     }
   }
 
