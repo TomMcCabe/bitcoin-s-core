@@ -1,6 +1,7 @@
 package org.bitcoins.core.serializers.blockchain
 
 import org.bitcoins.core.crypto.DoubleSha256Digest
+import org.bitcoins.core.protocol.blockchain.BlockHeader
 import org.bitcoins.core.util.BitcoinSUtil
 import org.scalatest.{FlatSpec, MustMatchers}
 
@@ -21,7 +22,7 @@ class RawBlockHeaderSerializerTest extends FlatSpec with MustMatchers{
   val hash = "6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000"
 
   val hex = version + prevBlockHash + merkleRoot + timeStamp + nBits + nonce
-  "BlockHeader" must "parse genesis block header" in {
+  "RawBlockHeaderSerializer" must "parse genesis block header" in {
     val blockHeader = RawBlockHeaderSerializer.read(hex)
     blockHeader.version must be (java.lang.Long.parseLong(BitcoinSUtil.flipEndianess(version), 16))
     blockHeader.previousBlockHash must be (DoubleSha256Digest(prevBlockHash))
@@ -73,6 +74,7 @@ class RawBlockHeaderSerializerTest extends FlatSpec with MustMatchers{
     val hex = version + prevBlockHash + merkleRoot + timeStamp + nBits + nonce
     val hash = "c5a764eb61db336edb17be9c49dc07dcae0219bc51a2efe681df9f0000000000"
     val blockHeader = RawBlockHeaderSerializer.read(hex)
+    val bytes = BitcoinSUtil.decodeHex(hex)
     blockHeader.version must be (536870912)
     blockHeader.previousBlockHash must be (DoubleSha256Digest(prevBlockHash))
     blockHeader.merkleRootHash must be (DoubleSha256Digest(merkleRoot))
@@ -81,5 +83,6 @@ class RawBlockHeaderSerializerTest extends FlatSpec with MustMatchers{
     blockHeader.nonce must be (2667504451L)
     blockHeader.hash must be (DoubleSha256Digest(hash))
     RawBlockHeaderSerializer.write(blockHeader) must be (hex)
+    BlockHeader.fromBytes(bytes) must be (RawBlockHeaderSerializer.read(hex))
   }
 }

@@ -65,8 +65,11 @@ class ECPrivateKeyTest extends FlatSpec with MustMatchers {
   it must "determine if a private key corresponds to a compressed public key or not" in {
     val compressedKey = "L1RrrnXkcKut5DEMwtDthjwRcTTwED36thyL1DebVrKuwvohjMNi"
     val uncompressedKey = "93DVKyFYwSN6wEo3E2fCrFPUp17FtrtNi2Lf7n4G3garFb16CRj"
+    val invalidCompressedByteSeq : Seq[Byte] = Seq(-128, 85, -55, -68, -53, -98, -42, -124, 70, -47, -73, 82, 115,
+      -69, -50, -119, -41, -2, 1, 58, -118, -51, 22, 37, 81, 68, 32, -5, 42, -54, 26, 33, -60, -1, -103, -95, 111, -44)
     ECPrivateKey.isCompressed(compressedKey) must be (true)
     ECPrivateKey.isCompressed(uncompressedKey) must be (false)
+    ECPrivateKey.isCompressed(invalidCompressedByteSeq) must be (false)
   }
 
   it must "create a fresh private key" in {

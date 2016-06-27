@@ -14,6 +14,8 @@ class BitcoinAddressTest extends FlatSpec with MustMatchers {
     val address = "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy"
     BitcoinAddress.p2shAddress(address) must be (true)
     BitcoinAddress.p2pkh(address) must be (false)
+    BitcoinAddress.p2shAddress(BitcoinAddress(address)) must be (true)
+    BitcoinAddress.p2pkh(BitcoinAddress(address)) must be (false)
   }
 
   "17WN1kFw8D6w1eHzqvkh49xwjE3iPN925b" must "be a valid p2pkh" in {
@@ -41,6 +43,16 @@ class BitcoinAddressTest extends FlatSpec with MustMatchers {
     }
   }
 
+  "2mbZwFXF6cxShaCo2czTRB62WTx9LxhTtpP" must "not validate as a p2sh address" in {
+    val address = "2mbZwFXF6cxShaCo2czTRB62WTx9LxhTtpP"
+    BitcoinAddress.p2shAddress(address) must be (false)
+  }
+
+  "1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i2" must "not validate as a p2pkh address" in {
+    val address = "1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i2"
+    BitcoinAddress.p2pkh(address) must be (false)
+  }
+
   "akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA" must "be a valid asset address" in {
     val assetAddress = AssetAddress("akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA")
     assetAddress.value must be ("akJsoCcyh34FGPotxfEoSXGwFPCNAkyCgTA")
@@ -49,7 +61,7 @@ class BitcoinAddressTest extends FlatSpec with MustMatchers {
   "An asset address with the first character replaced" must "not be a valid asset address" in {
     //3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLyy
     intercept[IllegalArgumentException] {
-      val assetAddress = AssetAddress("aJ98t1WpEZ73CNmQviecrnyiWrnqRhWNLyy")
+      AssetAddress("aJ98t1WpEZ73CNmQviecrnyiWrnqRhWNLyy")
     }
   }
 }

@@ -24,4 +24,10 @@ class AddressTest extends FlatSpec with MustMatchers with BitcoinSLogger {
     assetAddress must be (TestUtil.assetAddress)
     bitcoinAddress must be (TestUtil.bitcoinAddress)
   }
+
+  it must "throw an exception for an invalid address" in {
+    intercept[RuntimeException] {
+      Address("2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br222")
+    }
+  }
 }

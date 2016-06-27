@@ -97,7 +97,7 @@ object ECPrivateKey extends Factory[ECPrivateKey] {
 
   /**
     * Takes in WIF private key as a sequence of bytes and determines if it corresponds to a compressed public key.
-    * If the private key corresponds to a compressed public key, the last byte should be 0x01, and
+    * If the private key corresponds to a compressed public key, the 5th-to-last byte should be 0x01, and
     * the WIF string will have started with K or L instead of 5 (or c instead of 9 on testnet).
     *
     * @param bytes private key in bytes
