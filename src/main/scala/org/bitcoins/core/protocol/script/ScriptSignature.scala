@@ -1,6 +1,6 @@
 package org.bitcoins.core.protocol.script
 
-import org.bitcoins.core.crypto.{ECDigitalSignature, ECPublicKey, EmptyDigitalSignature}
+import org.bitcoins.core.crypto.{ECDigitalSignature, ECPublicKey}
 import org.bitcoins.core.number.Int32
 import org.bitcoins.core.protocol.NetworkElement
 import org.bitcoins.core.script.constant._
@@ -39,15 +39,21 @@ sealed trait ScriptSignature extends NetworkElement with BitcoinSLogger {
 
 
   /**
-    * Derives the hash type for a given digitalSignature
+    * Derives the hash types for every digitalSignature in the ScriptSignature object
     *
-    * @param digitalSignature
     * @return
     */
-  def hashType(digitalSignature: ECDigitalSignature) : HashType = {
-    digitalSignature match {
-      case EmptyDigitalSignature => SIGHASH_ALL(Int32.one)
-      case sig : ECDigitalSignature => HashType(Seq(digitalSignature.bytes.last))
+  def hashTypes : Seq[HashType] = {
+    val numOfSignatures = signatures.size
+    numOfSignatures match {
+      case 0 => Seq(SIGHASH_ALL(Int32.one))
+      case 1 => Seq(HashType(Seq(signatures.head.bytes.last)))
+      case _ => {
+        require(numOfSignatures >= 2)
+        for {
+          sig <- signatures
+        } yield HashType(Seq(sig.bytes.last))
+      }
     }
   }
 }
@@ -239,7 +245,7 @@ object P2SHScriptSignature extends Factory[P2SHScriptSignature] with BitcoinSLog
     * @return
     */
   def isP2SHScriptSig(asm: Seq[ScriptToken]): Boolean = asm match {
-    case _ if (asm.size > 1 && isRedeemScript(asm.last)) => true
+    case _ if asm.size > 1 && isRedeemScript(asm.last) => true
     case _ => false
   }
 
@@ -260,6 +266,8 @@ object P2SHScriptSignature extends Factory[P2SHScriptSignature] with BitcoinSLog
           case x : MultiSignatureScriptPubKey => true
           case x : P2SHScriptPubKey => true
           case x : P2PKScriptPubKey => true
+          case x : CLTVScriptPubKey => true
+          case x : CSVScriptPubKey => true
           case x : NonStandardScriptPubKey => false
           case EmptyScriptPubKey => false
         }
