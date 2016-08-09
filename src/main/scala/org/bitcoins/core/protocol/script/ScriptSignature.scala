@@ -260,6 +260,7 @@ object P2SHScriptSignature extends Factory[P2SHScriptSignature] with BitcoinSLog
           case x : MultiSignatureScriptPubKey => true
           case x : P2SHScriptPubKey => true
           case x : P2PKScriptPubKey => true
+          case x : CLTVScriptPubKey => true
           case x : NonStandardScriptPubKey => false
           case EmptyScriptPubKey => false
         }
