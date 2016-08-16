@@ -1,15 +1,15 @@
 package org.bitcoins.core.protocol.script
 
+import org.bitcoins.core.config.NetworkParameters
 import org.bitcoins.core.crypto.{ECPublicKey, Sha256Hash160Digest}
-import org.bitcoins.core.number.UInt32
-import org.bitcoins.core.script.locktime.OP_CHECKLOCKTIMEVERIFY
-import org.bitcoins.core.serializers.script.{RawScriptPubKeyParser, ScriptParser}
 import org.bitcoins.core.protocol._
 import org.bitcoins.core.script.ScriptSettings
 import org.bitcoins.core.script.bitwise.{OP_EQUAL, OP_EQUALVERIFY}
 import org.bitcoins.core.script.constant._
 import org.bitcoins.core.script.crypto.{OP_CHECKMULTISIG, OP_CHECKMULTISIGVERIFY, OP_CHECKSIG, OP_HASH160}
+import org.bitcoins.core.script.locktime.OP_CHECKLOCKTIMEVERIFY
 import org.bitcoins.core.script.stack.{OP_DROP, OP_DUP}
+import org.bitcoins.core.serializers.script.{RawScriptPubKeyParser, ScriptParser}
 import org.bitcoins.core.util._
 
 import scala.util.{Failure, Success, Try}
@@ -35,7 +35,10 @@ sealed trait ScriptPubKey extends NetworkElement with BitcoinSLogger {
  * https://bitcoin.org/en/developer-guide#pay-to-public-key-hash-p2pkh
  * Format: OP_DUP OP_HASH160 <PubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
  */
-trait P2PKHScriptPubKey extends ScriptPubKey
+trait P2PKHScriptPubKey extends ScriptPubKey {
+  def pubKeyHash : Sha256Hash160Digest = Sha256Hash160Digest(asm(asm.length - 3).bytes)
+  def address(network : NetworkParameters) : P2PKHAddress = P2PKHAddress(Base58.encodeHashToAddress(pubKeyHash, network, false).value)
+}
 
 
 object P2PKHScriptPubKey extends Factory[P2PKHScriptPubKey] {
@@ -237,12 +240,10 @@ object MultiSignatureScriptPubKey extends Factory[MultiSignatureScriptPubKey] {
  * Format: OP_HASH160 <Hash160(redeemScript)> OP_EQUAL
  */
 trait P2SHScriptPubKey extends ScriptPubKey {
-  /**
-    * The hash of the script for which this scriptPubKey is being created from
-    *
-    * @return
-    */
+  /** The hash of the script for which this scriptPubKey is being created from */
   def scriptHash : Sha256Hash160Digest = Sha256Hash160Digest(asm(asm.length - 2).bytes)
+
+  def address(network : NetworkParameters) : P2SHAddress = P2SHAddress(Base58.encodeHashToAddress(scriptHash, network, true).value)
 }
 
 object P2SHScriptPubKey extends Factory[P2SHScriptPubKey] with BitcoinSLogger {
@@ -285,7 +286,7 @@ object P2SHScriptPubKey extends Factory[P2SHScriptPubKey] with BitcoinSLogger {
  * Format: <pubkey> OP_CHECKSIG
  */
 trait P2PKScriptPubKey extends ScriptPubKey {
-  def publicKey = ECPublicKey(BitcoinScriptUtil.filterPushOps(asm).head.bytes)
+  def publicKey : ECPublicKey = ECPublicKey(BitcoinScriptUtil.filterPushOps(asm).head.bytes)
 }
 
 object P2PKScriptPubKey extends Factory[P2PKScriptPubKey] {
@@ -322,6 +323,12 @@ object P2PKScriptPubKey extends Factory[P2PKScriptPubKey] {
 
 }
 
+/**
+  * Represents a scriptPubKey that contains OP_CHECKLOCKTIMEVERIFY.
+  * The CLTVScriptPubKey needs to be hashed to a P2SHScriptPubKey. Our default P2PK format inside the
+  * CLTVScriptPubKey isn't mandatory.
+  * Format: <locktime> OP_CHECKLOCKTIMEVERIFY OP_DROP <pubkey> OP_CHECKSIG
+  */
 trait CLTVScriptPubKey extends ScriptPubKey
 
 object CLTVScriptPubKey extends Factory[CLTVScriptPubKey] {
@@ -338,17 +345,16 @@ object CLTVScriptPubKey extends Factory[CLTVScriptPubKey] {
   }
 
   def isCLTVScriptPubKey(asm : Seq[ScriptToken]) : Boolean = asm match {
-    case List(timeBytesToPush : BytesToPushOntoStack, time : ScriptConstant, OP_CHECKLOCKTIMEVERIFY, OP_DROP, OP_DUP,
-    hashBytesToPush : BytesToPushOntoStack, pubKeyHash : ScriptConstant, OP_EQUALVERIFY, OP_CHECKSIG) => true
+    case List(lockTimeBytesToPush : BytesToPushOntoStack, lockTime : ScriptConstant, OP_CHECKLOCKTIMEVERIFY, OP_DROP,
+    pubKeyBytesToPush : BytesToPushOntoStack, pubKey : ScriptConstant, OP_CHECKSIG) => true
     case _ => false
   }
 
-  def apply(timestamp : ScriptNumber, pubkey : ECPublicKey) : CLTVScriptPubKey = {
+  def apply(timestamp : ScriptNumber, pubKey : ECPublicKey) : CLTVScriptPubKey = {
     val pushOpsTimeStamp = BitcoinScriptUtil.calculatePushOp(timestamp.bytes)
-    val pubKeyHash = CryptoUtil.sha256Hash160(pubkey.bytes)
-    val pushOpsHash = BitcoinScriptUtil.calculatePushOp(pubKeyHash.bytes)
-    val asm = pushOpsTimeStamp ++ Seq(ScriptConstant(timestamp.bytes)) ++ Seq(OP_CHECKLOCKTIMEVERIFY, OP_DROP, OP_DUP) ++
-    pushOpsHash ++ Seq(ScriptConstant(pubKeyHash.bytes)) ++ Seq(OP_EQUALVERIFY, OP_CHECKSIG)
+    val pushOpsPubKey = BitcoinScriptUtil.calculatePushOp(pubKey.bytes)
+    val asm = pushOpsTimeStamp ++ Seq(ScriptConstant(timestamp.bytes)) ++ Seq(OP_CHECKLOCKTIMEVERIFY, OP_DROP) ++
+    pushOpsPubKey ++ Seq(ScriptConstant(pubKey.bytes)) ++ Seq(OP_CHECKSIG)
     CLTVScriptPubKey.fromAsm(asm)
   }
 }
@@ -390,16 +396,16 @@ object ScriptPubKey extends Factory[ScriptPubKey] with BitcoinSLogger {
     */
   def fromAsm(asm : Seq[ScriptToken]) : ScriptPubKey = asm match {
     case Seq() => EmptyScriptPubKey
-    case List(OP_DUP, OP_HASH160, x : BytesToPushOntoStack, y : ScriptConstant, OP_EQUALVERIFY, OP_CHECKSIG) =>
-      P2PKHScriptPubKey.fromAsm(asm)
-    case List(OP_HASH160, x : BytesToPushOntoStack, y : ScriptConstant, OP_EQUAL) =>
-      P2SHScriptPubKey.fromAsm(asm)
-    case List(b : BytesToPushOntoStack, x : ScriptConstant, OP_CHECKSIG) => P2PKScriptPubKey.fromAsm(asm)
-    case _ if (MultiSignatureScriptPubKey.isMultiSignatureScriptPubKey(asm)) =>
-      MultiSignatureScriptPubKey.fromAsm(asm)
+    case _ if P2PKHScriptPubKey.isP2PKHScriptPubKey(asm) => P2PKHScriptPubKey.fromAsm(asm)
+    case _ if P2SHScriptPubKey.isP2SHScriptPubKey(asm) => P2SHScriptPubKey.fromAsm(asm)
+    case _ if P2PKScriptPubKey.isP2PKScriptPubKey(asm) => P2PKScriptPubKey.fromAsm(asm)
+    case _ if MultiSignatureScriptPubKey.isMultiSignatureScriptPubKey(asm) => MultiSignatureScriptPubKey.fromAsm(asm)
+    case _ if CLTVScriptPubKey.isCLTVScriptPubKey(asm) => CLTVScriptPubKey.fromAsm(asm)
     case _ => NonStandardScriptPubKey.fromAsm(asm)
   }
 
   def fromBytes(bytes : Seq[Byte]) : ScriptPubKey = RawScriptPubKeyParser.read(bytes)
+
+  def apply(asm : Seq[ScriptToken]) : ScriptPubKey = fromAsm(asm)
 
 }

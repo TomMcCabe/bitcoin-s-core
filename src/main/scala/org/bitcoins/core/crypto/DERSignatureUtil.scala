@@ -1,7 +1,7 @@
 package org.bitcoins.core.crypto
 
 import org.bitcoins.core.util.{BitcoinSLogger, BitcoinSUtil}
-import org.spongycastle.asn1.{ASN1Primitive, ASN1Integer, DLSequence, ASN1InputStream}
+import org.spongycastle.asn1.{ASN1InputStream, ASN1Integer, DLSequence}
 
 import scala.util.{Failure, Success, Try}
 
@@ -32,7 +32,7 @@ trait DERSignatureUtil extends BitcoinSLogger {
       logger.debug("firstByteIs0x30: " + firstByteIs0x30)
       //second byte must indicate the length of the remaining byte array
       val signatureSize = bytes(1).toLong
-      logger.debug("Encoded Sisgnature Size: " + signatureSize)
+      logger.debug("Encoded Signature Size: " + signatureSize)
       logger.debug("Actual Signature Size: " + bytes.slice(3,bytes.size).size)
       //checks to see if the signature length is the same as the signatureSize val
       val signatureLengthIsCorrect = signatureSize == bytes.slice(3,bytes.size).size
