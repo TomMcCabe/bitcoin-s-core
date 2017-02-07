@@ -449,7 +449,8 @@ trait ScriptInterpreter extends CryptoInterpreter with StackInterpreter with Con
               //in this case, just read OP_CSV just like a NOP and remove it from the stack
               else loop(ScriptProgram(p, p.script.tail, ScriptProgram.Script),calcOpCount(opCount,OP_CHECKSEQUENCEVERIFY))
             //oracle operations
-            case OP_APIQUERY1ID :: t => ???
+            case OP_APIQUERY1ID :: t =>
+              loop(HydrogenInterpreter.opApiQuery1Id(program), calcOpCount(opCount, OP_APIQUERY1ID))
             //no more script operations to run, return whether the program is valid and the final state of the program
             case Nil => loop(ScriptProgram.toExecutedProgram(p),opCount)
             case h :: t => throw new RuntimeException(h + " was unmatched")
